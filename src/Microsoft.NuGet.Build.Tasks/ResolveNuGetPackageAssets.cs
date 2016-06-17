@@ -11,6 +11,7 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.NuGet.Build.Tasks
 {
@@ -231,7 +232,7 @@ namespace Microsoft.NuGet.Build.Tasks
             }
 
             JObject lockFile;
-            using (var streamReader = new StreamReader(ProjectLockFile))
+            using (var streamReader = new StreamReader(File.Open(ProjectLockFile, FileMode.Open)))
             {
                 lockFile = JObject.Load(new JsonTextReader(streamReader));
             }
@@ -276,7 +277,14 @@ namespace Microsoft.NuGet.Build.Tasks
                 }
                 else
                 {
-                    _packageFolders.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        _packageFolders.Add(Path.Combine(Environment.GetEnvironmentVariable("UserProfile"), ".nuget", "packages"));
+                    }
+                    else
+                    {
+                        _packageFolders.Add(Path.Combine(Environment.GetEnvironmentVariable("HOME"), ".nuget", "packages"));
+                    }
                 }
             }
         }
@@ -634,8 +642,8 @@ namespace Microsoft.NuGet.Build.Tasks
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(pathToFinalAsset));
 
-                    using (var input = new StreamReader(package.GetFullPathToFile(sharedAsset.Name), detectEncodingFromByteOrderMarks: true))
-                    using (var output = new StreamWriter(pathToFinalAsset, append: false, encoding: input.CurrentEncoding))
+                    using (var input = new StreamReader(File.Open(package.GetFullPathToFile(sharedAsset.Name), FileMode.Open), detectEncodingFromByteOrderMarks: true))
+                    using (var output = new StreamWriter(File.Open(pathToFinalAsset, FileMode.OpenOrCreate), encoding: input.CurrentEncoding))
                     {
                         Preprocessor.Preprocess(input, output, preprocessorValues);
                     }
@@ -750,7 +758,7 @@ namespace Microsoft.NuGet.Build.Tasks
             bool hasRuntimesSection;
             try
             {
-                using (var streamReader = new StreamReader(ProjectLockFile.Replace(".lock.json", ".json")))
+                using (var streamReader = new StreamReader(File.Open(ProjectLockFile.Replace(".lock.json", ".json"), FileMode.Open)))
                 {
                     var jsonFile = JObject.Load(new JsonTextReader(streamReader));
                     hasRuntimesSection = jsonFile["runtimes"] != null;
