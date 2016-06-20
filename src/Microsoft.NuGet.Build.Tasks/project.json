@@ -1,4 +1,14 @@
 ﻿{
+  "version": "1.0.0-*",
+  "packOptions": {
+    "files": {
+      "mappings":{
+        "runtimes/any/native/": {
+          "include": ["*.targets", "*.props"]
+        }
+      }
+    }
+  },
   "dependencies": { "Newtonsoft.Json": "7.0.1" },
   "frameworks": {
     "netcoreapp1.0": {
@@ -22,5 +32,5 @@
       ]
     }
   },
-  "runtimes": { "win": { } }
+  "runtimes": { "win7-x64": { } }
 }
